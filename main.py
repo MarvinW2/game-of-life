@@ -2,28 +2,17 @@
 """
 Created on Sun Feb 22 13:25:57 2026
 
-@author: imarv
+@author: schmorv
 """
-import numpy as np
 
-def print_field(field):
-    rows,cols = field.shape
-    for x in range(0,rows):
-        for y in range(0,cols):
-            a = field[x][y]
-            print(a," ", end="")
-        print()
-    
-def next_generation(curr_field):
-    next_field = np.array(curr_field.shape,dtype=int)
-    
-    return
-    
-def count_living_neighbours():
-    return    
+from gui import *
+from engine import game
 
 if __name__ == "__main__":
-    field = np.eye(10,dtype=int)
-
-    print(field)
-    print_field(field)    
+    board = game.create_board(10)
+    board[2, 3:]=1
+    print(board)
+    print()
+    curr_board = game.next_generation(board)
+    print(curr_board)
+    #print_board(board)
