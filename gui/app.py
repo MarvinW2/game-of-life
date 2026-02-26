@@ -1,9 +1,34 @@
 import dearpygui.dearpygui as dpg
-import engine as eng
+import numpy as np
 
-#always first command
+from engine import game as eng
+
+def draw_board(board: np.ndarray, width: int, height: int) -> None:
+    cell_width = float(width) / board.shape[0]
+    cell_height = float(height) / board.shape[1]
+    print(width, height)
+    print(board)
+    with dpg.drawlist(tag="drawlist_board",width=width, height=height):
+        dpg.draw_text((0, 0), "Origin", color=(0, 0, 0, 0), size=15)
+        dpg.draw_rectangle((0,0), (width,height), color=(255,255,255), fill=(255,255,255))
+        living_cells = np.where(board == 1)
+        print(living_cells)
+        #living_cells = np.array((living_cells[0],living_cells[1]))
+        living_cells = np.column_stack((living_cells[1], living_cells[0]))
+        for row, col in living_cells:
+            dpg.draw_rectangle((cell_width*row, cell_height*col), (cell_width*(row+1), cell_height*(col+1)), color=(0, 0, 0), fill=(0, 0, 0))
+        for row in range(board.shape[0]+1):
+            dpg.draw_line((cell_width * row, 0), (cell_width * row, height), color=(0, 0, 0))
+        for col in range(board.shape[1] + 1):
+            dpg.draw_line((0,cell_height*col), (width,cell_height*col), color=(0, 0, 0))
+
 def main():
+    # always first command
     dpg.create_context()
+
+    board: np.ndarray = eng.create_random_board(10,30)
+
+
     with dpg.window(tag="Primary Window"):
         with dpg.group():
             dpg.add_text("Conway's Game of Life")
@@ -12,21 +37,8 @@ def main():
 
         with dpg.group(horizontal=True):
             # Links: Spielfeld-Container
-            with dpg.child_window(width=300, height=200, border=True):
-                values = (0.8, 2.4, 2.5, 3.9, 0.0, 4.0, 0.0,
-                          2.4, 0.0, 4.0, 1.0, 2.7, 0.0, 0.0,
-                          1.1, 2.4, 0.8, 4.3, 1.9, 4.4, 0.0,
-                          0.6, 0.0, 0.3, 0.0, 3.1, 0.0, 0.0,
-                          0.7, 1.7, 0.6, 2.6, 2.2, 6.2, 0.0,
-                          1.3, 1.2, 0.0, 0.0, 0.0, 3.2, 5.1,
-                          0.1, 2.0, 0.0, 1.4, 0.0, 1.9, 6.3)
-                dpg.add_text("BOARD AREA")
-                with dpg.plot(label="Board", no_mouse_pos=True, height=300, width=-1):
-                    #dpg.add_plot_axis(dpg.mvXAxis, lock_min=True, lock_max=True, no_gridlines=False,
-                    #                  no_tick_marks=False)
-                    #with dpg.plot_axis(dpg.mvYAxis, label="y", no_gridlines=True, no_tick_marks=True, lock_min=True,
-                    #                   lock_max=True):
-                        dpg.add_heat_series(values, 7, 7, tag="heat_series")
+            with dpg.child_window(width=300, height=300, border=True):
+                draw_board(board, 200-50, 300-50)
 
             # Rechts: Input-Container
             with dpg.child_window(width=0, height=200, border=True):  # width=0 -> nimmt Restbreite

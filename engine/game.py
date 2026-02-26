@@ -1,5 +1,14 @@
 import numpy as np
 
+class GameOfLife:
+    def __init__(self,rows: int, cols: int, ) -> None:
+        self.board = np.zeros((rows, cols), dtype=bool)
+        self.rows = rows
+        self.cols = cols
+
+    def __str__(self) -> str:
+        return self.board.__str__()
+
 def create_board(n: int) -> np.ndarray:
     board = np.zeros((n, n), dtype=int)
     return board
