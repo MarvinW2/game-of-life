@@ -10,19 +10,29 @@ BOARD_WIDTH = 200
 BOARD_HEIGHT = 200
 
 def draw_board(board: np.ndarray, width: int, height: int) -> None:
-    cell_width = float(width) / board.shape[0]
-    cell_height = float(height) / board.shape[1]
-    #print(board)
+    rows, cols = board.shape
+    cell_width = float(width) / cols
+    cell_height = float(height) / rows
+
     dpg.delete_item(DRAWLIST_TAG, children_only=True)
     dpg.draw_rectangle((0,0), (width,height), color=(255,255,255), fill=(255,255,255), parent=DRAWLIST_TAG)
+
     living_cells = np.where(board == True)
     living_cells = np.column_stack((living_cells[1], living_cells[0]))
+
     for row, col in living_cells:
         dpg.draw_rectangle((cell_width*row, cell_height*col), (cell_width*(row+1), cell_height*(col+1)), color=(0, 0, 0), fill=(0, 0, 0),parent=DRAWLIST_TAG)
-    for row in range(board.shape[0]+1):
-        dpg.draw_line((cell_width * row, 0), (cell_width * row, height), color=(0, 0, 0),parent=DRAWLIST_TAG)
-    for col in range(board.shape[1] + 1):
-        dpg.draw_line((0,cell_height*col), (width,cell_height*col), color=(0, 0, 0),parent=DRAWLIST_TAG)
+
+    #draw horizontal lines
+    for row in range(rows+1):
+        dpg.draw_line((0,cell_height*row),(width,cell_height*row),color=(0,0,0),parent=DRAWLIST_TAG)
+    #draw vertical lines
+    for col in range(cols+1):
+        dpg.draw_line((cell_width*col,0),(cell_width*col,height),color=(0,0,0),parent=DRAWLIST_TAG)
+    #for row in range(board.shape[0]+1):
+     #   dpg.draw_line((cell_width * row, 0), (cell_width * row, height), color=(0, 0, 0),parent=DRAWLIST_TAG)
+    #for col in range(board.shape[1] + 1):
+     #   dpg.draw_line((0,cell_height*col), (width,cell_height*col), color=(0, 0, 0),parent=DRAWLIST_TAG)
 
 def draw_last_board(sender, app_data, user_data):
     user_data.last_generation()
