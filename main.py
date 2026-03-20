@@ -10,9 +10,9 @@ from engine import game
 
 if __name__ == "__main__":
     board = game.create_board(10)
-    board[2, 3:]=1
+    board[2, 3:] = 1
     print(board)
     print()
     curr_board = game.next_generation(board)
     print(curr_board)
-    #print_board(board)
+    # print_board(board)
