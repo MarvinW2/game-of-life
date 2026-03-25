@@ -12,6 +12,11 @@ DRAWLIST = "Drawlist Board"
 
 BOARD_RENDER_FPS = 3
 
+APP_STATE = {
+    "run_scheduled": False,
+    "layout_redraw_scheduled": False,
+}
+
 
 def draw_board(board: np.ndarray) -> None:
     width, height = dpg.get_item_rect_size(BOARD)
@@ -52,7 +57,7 @@ def draw_board(board: np.ndarray) -> None:
 
     living_cells = np.argwhere(board)
 
-    for row, col in living_cells:
+    for col, row in living_cells:
         dpg.draw_rectangle((cell_width * row, cell_height * col), (cell_width * (row + 1), cell_height *
                            (col + 1)), color=colors["gray"], fill=colors["black"], parent=DRAWLIST)
 
@@ -78,14 +83,27 @@ def draw_next_board(sender, app_data, user_data: GameOfLife) -> None:
 
 
 def run_game(sender, app_data, user_data: GameOfLife) -> None:
-    if dpg.get_value("checkbox_run"):
-        user_data.next_generation()
-        # apply_layout(sender,app_data,user_data)
-        draw_board(user_data.curr_board)
-        change_gen_counter(user_data)
-        fps = max(dpg.get_frame_rate(), 1.0)
-        frames_per_step = max(1, int(fps // BOARD_RENDER_FPS))
-        dpg.set_frame_callback(dpg.get_frame_count() + frames_per_step, run_game, user_data=user_data)
+    """Tick callback for simulation loop. Schedules itself while run is active."""
+    APP_STATE["run_scheduled"] = False
+
+    if not dpg.get_value("checkbox_run"):
+        return
+
+    user_data.next_generation()
+    draw_board(user_data.curr_board)
+    change_gen_counter(user_data)
+
+    fps = max(dpg.get_frame_rate(), 1.0)
+    frames_per_step = max(1, int(round(fps / BOARD_RENDER_FPS)))
+    APP_STATE["run_scheduled"] = True
+    dpg.set_frame_callback(dpg.get_frame_count() + frames_per_step, run_game, user_data=user_data)
+
+
+def on_run_toggle(sender, app_data, user_data: GameOfLife) -> None:
+    """Start the run loop only once when checkbox becomes active."""
+    if dpg.get_value("checkbox_run") and not APP_STATE["run_scheduled"]:
+        APP_STATE["run_scheduled"] = True
+        dpg.set_frame_callback(dpg.get_frame_count() + 1, run_game, user_data=user_data)
 
 
 def clear_board(sender, app_data, user_data: GameOfLife) -> None:
@@ -137,14 +155,23 @@ def change_gen_counter(user_data: GameOfLife) -> None:
 def apply_layout(sender, app_data, user_data: GameOfLife) -> None:
     game_display_size = dpg.get_item_rect_size(GAME_DISPLAY)
     control_size = dpg.get_item_rect_size(CONTROLS)
-    board_size = game_display_size[0] - control_size[0]
+    board_size = max(1, game_display_size[0] - control_size[0])
     dpg.set_item_width(BOARD, board_size)
-    # draw_board(user_data.curr_board)
+
+    # While running, avoid scheduling extra redraw callbacks on every resize event.
+    if dpg.get_value("checkbox_run"):
+        return
+
+    if APP_STATE["layout_redraw_scheduled"]:
+        return
+
+    APP_STATE["layout_redraw_scheduled"] = True
     next_frame = dpg.get_frame_count() + 1
     dpg.set_frame_callback(next_frame, redraw_board_after_layout, user_data=user_data.curr_board)
 
 
 def redraw_board_after_layout(sender, app_data, user_data) -> None:
+    APP_STATE["layout_redraw_scheduled"] = False
     draw_board(user_data)
 
 
@@ -161,8 +188,8 @@ def main() -> None:
 
     with dpg.window(tag=PRIMARY_WINDOW):
         with dpg.group(tag=HEADER_TEXT, indent=0):
-            dpg.add_text("Conway's Game of Life")
-            dpg.add_text("Links: Board.\t Rechts: Einstellungen.")
+            dpg.add_text("Willkommen bei meiner Implemetierung von Conway's Game of Life")
+            dpg.add_text("Viel Spaß beim rumspielen")
             dpg.add_separator()
 
         with dpg.child_window(tag=GAME_DISPLAY, autosize_x=True, autosize_y=True, border=False):
@@ -213,7 +240,7 @@ def main() -> None:
                     with dpg.group(horizontal=True):
                         dpg.add_button(tag="btn_step_back", arrow=True, direction=dpg.mvDir_Left, callback=draw_last_board, user_data=game)
                         dpg.add_button(tag="btn_board_forward", arrow=True, direction=dpg.mvDir_Right, callback=draw_next_board, user_data=game)
-                    dpg.add_checkbox(tag="checkbox_run", label="Run", default_value=False, callback=run_game, user_data=game)
+                    dpg.add_checkbox(tag="checkbox_run", label="Run", default_value=False, callback=on_run_toggle, user_data=game)
 
                 with dpg.child_window(tag=BOARD, auto_resize_x=False, track_offset=0, border=False):
                     dpg.add_drawlist(tag=DRAWLIST, width=0, height=0)
@@ -245,7 +272,7 @@ def main() -> None:
     dpg.show_viewport()
     dpg.set_primary_window(PRIMARY_WINDOW, True)
 
-    dpg.show_item_registry()
+    #dpg.show_item_registry()
     dpg.set_viewport_resize_callback(apply_layout, user_data=game)
     dpg.set_frame_callback(3, apply_layout, user_data=game)
     dpg.start_dearpygui()
